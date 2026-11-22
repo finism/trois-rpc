@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TROIS.ID -> Discord RPC bridge
 // @namespace    trois-rpc
-// @version      1.0.0
+// @version      1.2.1
 // @description  Capture le morceau en cours d'écoute sur trois.id et l'envoie à un bridge local pour piloter la Rich Presence Discord
 // @match        https://trois.id/*
 // @run-at       document-start
@@ -14,6 +14,9 @@
   "use strict";
 
   const BRIDGE_URL = "http://127.0.0.1:9877";
+
+  // Marqueur visible dans l'inspecteur (<html data-trois-rpc>) pour vérifier que le script tourne.
+  document.documentElement.dataset.troisRpc = "1.2.1";
 
   // État courant identifié pour le morceau en cours
   let current = {
@@ -74,7 +77,8 @@
 
   win.fetch = function (input, init) {
     try {
-      const url = typeof input === "string" ? input : input?.url;
+      // input peut être une string, un objet URL ou un Request
+      const url = input?.url ?? String(input);
       const method = (init?.method || (typeof input === "object" && input?.method) || "GET").toUpperCase();
 
       if (url && url.includes("/api/live/heartbeat") && method === "POST") {
@@ -103,50 +107,47 @@
   };
 
   // ---------------------------------------------------------------------
-  // 2) Repérage de l'élément <audio> du lecteur (inséré dynamiquement par
-  //    l'app React), et écoute de ses évènements natifs.
+  // 2) Repérage du lecteur audio. Le site joue le son via un `new Audio()`
+  //    qui n'est PAS inséré dans la page : on ne peut pas le trouver dans le
+  //    DOM. On intercepte donc play() pour récupérer l'élément, puis on
+  //    écoute ses évènements directement.
   // ---------------------------------------------------------------------
   let boundAudio = null;
 
   function getAudioEl() {
-    return document.querySelector("audio");
+    return boundAudio || document.querySelector("audio");
   }
 
   function bindAudio(audio) {
-    if (!audio || audio === boundAudio) return;
+    if (audio === boundAudio) return;
     boundAudio = audio;
-
     audio.addEventListener("play", () => sendUpdate(true));
     audio.addEventListener("pause", () => sendUpdate(true));
-    audio.addEventListener("ended", () => sendStop());
+    audio.addEventListener("seeked", () => sendUpdate(true));
     audio.addEventListener("loadedmetadata", () => sendUpdate(true));
     audio.addEventListener("timeupdate", () => sendUpdate(false));
+    audio.addEventListener("ended", () => {
+      // On oublie le morceau fini : le suivant ne s'affichera qu'à son heartbeat,
+      // au lieu d'afficher l'ancien titre avec la progression du nouveau.
+      current.track = null;
+      sendStop();
+    });
   }
 
-  const observer = new MutationObserver(() => {
-    const audio = getAudioEl();
-    if (audio && audio !== boundAudio) {
-      bindAudio(audio);
+  const mediaProto = win.HTMLMediaElement.prototype;
+  const originalPlay = mediaProto.play;
+  mediaProto.play = function () {
+    try {
+      if (this.tagName === "AUDIO") bindAudio(this);
+    } catch (e) {
+      // Ne jamais empêcher la lecture à cause de ce script
     }
-  });
-
-  function startObserving() {
-    observer.observe(document.documentElement, { childList: true, subtree: true });
-    const existing = getAudioEl();
-    if (existing) bindAudio(existing);
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", startObserving);
-  } else {
-    startObserving();
-  }
+    return originalPlay.apply(this, arguments);
+  };
 
   // ---------------------------------------------------------------------
-  // 3) Signal d'arrêt quand on quitte/ferme la page ou change d'onglet
-  //    pour de bon, afin que la Rich Presence disparaisse plus vite que
+  // 3) Signal d'arrêt quand on quitte/ferme la page, afin que la Rich Presence disparaisse plus vite que
   //    le délai d'inactivité par défaut du bridge.
   // ---------------------------------------------------------------------
   window.addEventListener("pagehide", sendStop);
-  window.addEventListener("beforeunload", sendStop);
 })();
