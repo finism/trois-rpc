@@ -84,6 +84,16 @@ function fitText(value) {
   return s.length > 128 ? s.slice(0, 127) + "…" : s.padEnd(2, "⠀");
 }
 
+// Page du morceau sur trois.id (même lien que le bouton « partager » du site).
+function troisTrackUrl(track, alias) {
+  return `https://trois.id/track/${encodeURIComponent(alias)}/${encodeURIComponent(track)}`;
+}
+
+// Lien de recherche YouTube du morceau en cours (Discord limite l'URL d'un bouton à 512 caractères).
+function youtubeSearch(track, alias) {
+  return "https://www.youtube.com/results?search_query=" + encodeURIComponent(`${alias} ${track}`.slice(0, 200));
+}
+
 async function applyActivity({ track, alias, album, currentTime, duration, paused }) {
   if (!track || !alias || !discordReady) return;
 
@@ -106,6 +116,10 @@ async function applyActivity({ track, alias, album, currentTime, duration, pause
     smallImageKey: paused ? "pause" : "play",
     smallImageText: paused ? "En pause" : "En lecture",
     instance: false,
+    buttons: [
+      { label: "Listen on TROIS.ID", url: troisTrackUrl(track, alias) },
+      { label: "Search on YouTube", url: youtubeSearch(track, alias) },
+    ],
   };
   if (start !== null) {
     activity.startTimestamp = start;
