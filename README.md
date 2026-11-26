@@ -9,7 +9,8 @@ Affiche automatiquement sur ton profil Discord le morceau que tu écoutes sur [t
    - écoute directement l'élément `<audio>` de la page pour connaître la position de lecture, la durée et l'état (lecture/pause).
 2. Il envoie ces infos à une **petite app Node.js** qui tourne en local sur ta machine (`http://127.0.0.1:9877`).
 3. Cette app parle à ton client **Discord Desktop** via IPC local et met à jour ta Rich Presence en conséquence.
-4. Si tu arrêtes d'écouter (onglet fermé, morceau terminé, plus de mise à jour depuis 20s), la Rich Presence disparaît automatiquement.
+4. La présence affiche deux boutons : **Listen on TROIS.ID** (la page du morceau) et **Search on YouTube**.
+5. Si tu arrêtes d'écouter (onglet fermé, morceau terminé, plus de mise à jour depuis 20s), la Rich Presence disparaît automatiquement.
 
 Aucune donnée ne sort de ta machine : tout se passe en local entre ton navigateur, l'app Node.js et Discord Desktop.
 
@@ -53,10 +54,17 @@ Laisse ce terminal ouvert tant que tu veux que la Rich Presence fonctionne (tu p
 
 ## Étape 3 — Installer le userscript
 
+Tampermonkey installé, clique ici : **[Installer le userscript](https://github.com/finism/trois-rpc/raw/main/userscript/trois-rpc.user.js)**, puis **Installer** dans la fenêtre de Tampermonkey. Les mises à jour arrivent ensuite automatiquement.
+
+Ensuite, va sur https://trois.id, connecte-toi, lance un morceau.
+
+<details><summary>Installation à la main</summary>
+
 1. Ouvre Tampermonkey → **Créer un script**.
 2. Supprime le contenu par défaut, colle le contenu de `userscript/trois-rpc.user.js`.
 3. Sauvegarde (Ctrl+S).
-4. Va sur https://trois.id, connecte-toi, lance un morceau.
+
+</details>
 
 ## Étape 4 — Vérifier
 

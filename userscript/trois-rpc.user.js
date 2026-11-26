@@ -1,6 +1,8 @@
 // ==UserScript==
 // @name         TROIS.ID -> Discord RPC bridge
 // @namespace    trois-rpc
+// @downloadURL  https://github.com/finism/trois-rpc/raw/main/userscript/trois-rpc.user.js
+// @updateURL    https://github.com/finism/trois-rpc/raw/main/userscript/trois-rpc.user.js
 // @version      1.2.1
 // @description  Capture le morceau en cours d'écoute sur trois.id et l'envoie à un bridge local pour piloter la Rich Presence Discord
 // @match        https://trois.id/*
